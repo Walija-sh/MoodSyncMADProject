@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'screens/onboarding_screens.dart';
 import 'screens/pin_setup_screen.dart';
 import 'screens/pin_login_screen.dart';
+import 'screens/main_app.dart'; // Add this import
 import 'storage/hive_storage.dart';
 
 void main() async {
@@ -71,53 +72,30 @@ class _InitialScreenState extends State<InitialScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<String>(
-      future: _initialRoute,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Scaffold(
-            body: Center(
-              child: Text('Error: ${snapshot.error}'),
-            ),
-          );
-        }
-
-        final route = snapshot.data ?? '/onboarding';
-
-        return Navigator(
-          initialRoute: route,
-          onGenerateRoute: (settings) {
-            switch (settings.name) {
-              case '/onboarding':
-                return MaterialPageRoute(
-                  builder: (_) => const OnboardingScreens(),
-                );
-              case '/pin-setup':
-                return MaterialPageRoute(
-                  builder: (_) => const PinSetupScreen(),
-                );
-              case '/pin-login':
-                return MaterialPageRoute(
-                  builder: (_) => const PinLoginScreen(),
-                );
-              default:
-                return MaterialPageRoute(
-                  builder: (_) => const OnboardingScreens(),
-                );
-            }
-          },
+  @override
+Widget build(BuildContext context) {
+  return FutureBuilder<void>(
+    future: HiveStorage().init(), // or a readiness flag
+    builder: (context, snapshot) {
+      if (snapshot.connectionState != ConnectionState.done) {
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
         );
-      },
-    );
-  }
+      }
+
+      final storage = HiveStorage();
+
+      if (!storage.getOnboardingCompleted()) {
+        return const OnboardingScreens();
+      }
+
+      if (!storage.isPINSet()) {
+        return const PinSetupScreen();
+      }
+
+      return const PinLoginScreen();
+    },
+  );
 }
 
-// upload to github and update home
-// acha update home ke is me All entries aye instead of just recent reflections, readmore icon click pe new page open ho with the journal entry to read it from there, optional edit ka 
+}

@@ -89,7 +89,12 @@ class _RelaxationScreenState extends State<RelaxationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: GradientAppBar(title: 'Relaxation'),
+      appBar: const GradientAppBar(
+  title: 'Relax',
+  subtitle: 'Breathe and unwind',
+  extraHeight: 50,
+),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

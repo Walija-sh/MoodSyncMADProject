@@ -16,13 +16,6 @@ class _MainAppState extends State<MainApp> {
   int _currentIndex = 0;
   final HiveStorage _storage = HiveStorage();
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const JournalEntryScreen(),
-    const StatsScreen(),
-    const RelaxationScreen(),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -31,83 +24,92 @@ class _MainAppState extends State<MainApp> {
 
   Future<void> _initializeApp() async {
     await _storage.init();
-    // You can prefetch any data here if needed
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: _buildBottomNavigationBar(),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: const [
+          HomeScreen(),
+          JournalEntryScreen(),
+          StatsScreen(),
+          RelaxationScreen(),
         ],
       ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey[600],
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book_outlined),
-            activeIcon: Icon(Icons.book),
-            label: 'Journal',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.insights_outlined),
-            activeIcon: Icon(Icons.insights),
-            label: 'Stats',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.spa_outlined),
-            activeIcon: Icon(Icons.spa),
-            label: 'Relax',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.3),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: Colors.purple,
+          unselectedItemColor: Colors.grey[600],
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.book_outlined),
+              activeIcon: Icon(Icons.book),
+              label: 'Journal',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.insights_outlined),
+              activeIcon: Icon(Icons.insights),
+              label: 'Stats',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.spa_outlined),
+              activeIcon: Icon(Icons.spa),
+              label: 'Relax',
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// Custom AppBar widget with purple-blue gradient
 class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
+  final String? subtitle;
+  final Widget? child;
   final List<Widget>? actions;
   final Widget? leading;
+  final double extraHeight;
 
   const GradientAppBar({
     super.key,
     required this.title,
+    this.subtitle,
+    this.child,
     this.actions,
     this.leading,
+    this.extraHeight = 0,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 20);
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + extraHeight);
 
   @override
   Widget build(BuildContext context) {
@@ -115,41 +117,65 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.purple.shade600,
-            Colors.blue.shade600,
+            Colors.purple.shade600.withValues(alpha: 0.75),
+            Colors.blue.shade600.withValues(alpha: 0.75),
           ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
       ),
-      child: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: leading,
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
-        actions: actions,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.purple.shade600,
-                Colors.blue.shade600,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top bar (navigation row)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (leading != null) leading!,
+                  if (leading != null) const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+
+                  if (actions != null) ...actions!,
+                ],
+              ),
+
+              if (subtitle != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  subtitle!,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.3,
+                    color: Colors.white.withValues(alpha: 0.85),
+                  ),
+                ),
               ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
+
+              if (child != null) ...[
+                const SizedBox(height: 18),
+                child!,
+              ],
+            ],
           ),
         ),
       ),

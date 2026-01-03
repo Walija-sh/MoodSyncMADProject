@@ -157,7 +157,7 @@ class OnboardingPage extends StatelessWidget {
                   color: Colors.purple[50],
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.psychology_outlined, size: 80, color: Colors.purple),
+                child: Icon(Icons.bookmark_add, size: 80, color: Colors.purple),
               ),
               const SizedBox(height: 50),
               Text(title,

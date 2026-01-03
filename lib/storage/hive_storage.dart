@@ -91,6 +91,14 @@ class HiveStorage {
       await _box.put(_journalEntriesKey, entries);
     }
   }
+  
+Future<void> updateJournalEntry(int index, Map<String, dynamic> newEntry) async {
+  final entries = getJournalEntries();
+  if (index >= 0 && index < entries.length) {
+    entries[index] = newEntry;
+    await _box.put(_journalEntriesKey, entries);
+  }
+}
 
   int getTotalEntries() => getJournalEntries().length;
 

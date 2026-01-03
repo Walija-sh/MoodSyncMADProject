@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intro/screens/main_app.dart';
 import '../storage/hive_storage.dart';
 import 'journal_entry_screen.dart';
 
@@ -87,10 +88,12 @@ class _StatsScreenState extends State<StatsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Your Insights'),
-        backgroundColor: Colors.purple,
-      ),
+     appBar: const GradientAppBar(
+  title: 'Your Insights',
+  subtitle: 'Mood trends & patterns',
+  extraHeight: 50,
+),
+
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: SingleChildScrollView(

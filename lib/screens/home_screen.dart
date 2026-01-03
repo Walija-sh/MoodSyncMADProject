@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intro/screens/main_app.dart';
 import './journal_entry_screen.dart';
 import '../storage/hive_storage.dart';
+import './journal_entry_detail_screen.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,7 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _username = 'User';
   int _streak = 0;
   int _entriesCount = 0;
-  List<Map<String, dynamic>> _recentEntries = [];
+  List<Map<String, dynamic>> _allEntries = [];
 
   @override
   void initState() {
@@ -28,13 +30,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
-    final entries = _storage.getJournalEntries(); // fixed: method exists
+    final entries = _storage.getJournalEntries();
 
     setState(() {
       _entriesCount = entries.length;
-      _recentEntries = entries.reversed.take(3).toList(); // latest 3 entries
+      _allEntries = entries.reversed.toList(); // All entries, latest first
       _streak = _calculateStreak(entries);
-      _username = _storage.getUsername(); // pull username from HiveStorage
+      _username = _storage.getUsername();
     });
   }
 
@@ -65,114 +67,77 @@ class _HomeScreenState extends State<HomeScreen> {
     return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}, ${now.year}';
   }
 
+  int _getOriginalIndex(int displayedIndex) {
+    // Since entries are displayed in reverse order (newest first)
+    // we need to convert displayed index to original index
+    return _allEntries.length - 1 - displayedIndex;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight + 250),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.purple.shade600.withValues(alpha: 0.9),
-                Colors.blue.shade600.withValues(alpha: 0.9),
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 10),
-                    Text(
-                      _getFormattedDate(),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.9), // replaced deprecated withValues
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Hi $_username, how are you feeling today?',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const JournalEntryScreen(),
-                          ),
-                        ).then((_) => _loadData());
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.9), // replaced deprecated withValues
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Tap to log your mood',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Track your daily emotion',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: Colors.purple,
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                              child: const Icon(
-                                Icons.add,
-                                color: Colors.white,
-                                size: 30,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+      appBar: GradientAppBar(
+  title: 'Hi $_username',
+  subtitle: _getFormattedDate(),
+  extraHeight: 150,
+  child: GestureDetector(
+    onTap: () async {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const JournalEntryScreen(),
+        ),
+      );
+
+      if (result == true) {
+        _loadData();
+      }
+    },
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Tap to log your mood',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ),
+              SizedBox(height: 4),
+              Text(
+                'Track your daily emotion',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
           ),
-        ),
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.purple,
+              borderRadius: BorderRadius.circular(25),
+            ),
+            child: const Icon(Icons.add, color: Colors.white),
+          ),
+        ],
       ),
+    ),
+  ),
+),
+
       body: RefreshIndicator(
         onRefresh: _loadData,
         child: SingleChildScrollView(
@@ -211,15 +176,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Recent Reflections',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'All Entries',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '$_entriesCount total',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
-              if (_recentEntries.isEmpty)
+              if (_allEntries.isEmpty)
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -238,14 +215,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 )
               else
-                ..._recentEntries.map((entry) {
+                ..._allEntries.asMap().entries.map((entryMap) {
+                  final index = entryMap.key;
+                  final entry = entryMap.value;
                   final date = entry['date'] ?? '';
                   final content = entry['content'] ?? '';
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildJournalEntry(
-                      date: date,
-                      content: content,
+                    child: GestureDetector(
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => JournalEntryDetailScreen(
+                              entry: entry,
+                              entryIndex: _getOriginalIndex(index),
+                            ),
+                          ),
+                        );
+                        
+                        // Reload data if entry was deleted or edited
+                        if (result == true) {
+                          _loadData();
+                        }
+                      },
+                      child: _buildJournalEntry(
+                        date: date,
+                        content: content,
+                      ),
                     ),
                   );
                 }),
@@ -276,7 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(
@@ -321,48 +318,70 @@ class _HomeScreenState extends State<HomeScreen> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: Colors.grey.withValues(alpha:0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            date,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.purple.shade600,
-              fontWeight: FontWeight.w500,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _formatDisplayDate(date),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.purple.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  safeContent.length > 100 ? '${safeContent.substring(0, 100)}...' : safeContent,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            safeContent.length > 100 ? '${safeContent.substring(0, 100)}...' : safeContent,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black87,
-              height: 1.5,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              'Read more',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.purple.shade600,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+          const SizedBox(width: 8),
+          Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: Colors.grey.shade400,
           ),
         ],
       ),
     );
+  }
+
+  String _formatDisplayDate(String dateString) {
+    try {
+      final parts = dateString.split('-');
+      if (parts.length == 3) {
+        final year = int.parse(parts[0]);
+        final month = int.parse(parts[1]);
+        final day = int.parse(parts[2]);
+        
+        final months = [
+          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        ];
+        
+        return '${months[month - 1]} $day, $year';
+      }
+      return dateString;
+    } catch (e) {
+      return dateString;
+    }
   }
 }
